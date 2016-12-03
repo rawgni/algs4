@@ -4,7 +4,7 @@ import edu.princeton.cs.algs4.StdOut;
 public class Percolation {
     private final boolean [][] grid;
     private final int size;
-    private final WeightedQuickUnionUF uf;
+    private final WeightedQuickUnionUF uf, bw;
     private final int bottom;
 
     public Percolation(int n) {
@@ -15,6 +15,7 @@ public class Percolation {
         size = n;
         bottom = n*n+1;
         uf = new WeightedQuickUnionUF(n*n+2);
+        bw = new WeightedQuickUnionUF(n*n+1);
     }
 
     private void valid(int row, int col) {
@@ -27,27 +28,32 @@ public class Percolation {
         return (row-1)*size+col;
     }
 
+    private void union(int src, int tgt) {
+        uf.union(src, tgt);
+        bw.union(src, tgt);
+    }
+
     public void open(int row, int col) {
         valid(row, col);
         grid[row][col] = true;
-        int tmp;
-        if (row == 1) uf.union(0, xyTo1D(row, col));
-        if (row == size) uf.union(bottom, xyTo1D(row, col));
+        int tgt = xyTo1D(row, col);
+        if (row == 1) union(0, tgt);
+        if (row == size) uf.union(bottom, tgt);
         // check top
         if (row > 1 && grid[row-1][col]) {
-            uf.union(xyTo1D(row, col), xyTo1D(row-1, col));
+            union(tgt, xyTo1D(row-1, col));
         }
         // check bottom
         if (row < size && grid[row+1][col]) {
-            uf.union(xyTo1D(row, col), xyTo1D(row+1, col));
+            union(tgt, xyTo1D(row+1, col));
         }
         // check left
         if (col > 1 && grid[row][col-1]) {
-            uf.union(xyTo1D(row, col), xyTo1D(row, col-1));
+            union(tgt, xyTo1D(row, col-1));
         }
         // check right
         if (col < size && grid[row][col+1]) {
-            uf.union(xyTo1D(row, col), xyTo1D(row, col+1));
+            union(tgt, xyTo1D(row, col+1));
         }
     }
 
@@ -58,7 +64,7 @@ public class Percolation {
 
     public boolean isFull(int row, int col) {
         valid(row, col);
-        return uf.connected(0, xyTo1D(row, col));
+        return bw.connected(0, xyTo1D(row, col));
     }
 
     public boolean percolates() {
